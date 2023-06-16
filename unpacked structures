@@ -1,0 +1,18 @@
+module tb;
+  struct{
+  int a;
+    bit [7:0] b;
+    string c;
+  }xyz;
+  
+  initial begin
+    xyz.a=500;
+    xyz.b=128;
+    xyz.c="Kancharla Rehit";
+    $display("xyz:%p",xyz);
+    xyz.a=255;
+    xyz.b=205;
+    xyz.c="lpu";
+    $display("xyz:%p",xyz);
+  end
+endmodule
