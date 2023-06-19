@@ -1,0 +1,21 @@
+class packet;
+  int base;
+  int height;
+  function int area();
+    area=base*height;
+  endfunction
+    
+endclass
+    
+    module tb;
+      
+      packet p;
+      initial begin
+        p=new;
+        p.base=5;
+        p.height=10;
+        
+        $display(" the valure of the base and height is %d and %d",p.base,p.height);
+        $display("the area of atrinagle is %d",p.area);
+      end
+    endmodule
