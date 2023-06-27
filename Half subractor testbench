@@ -1,1 +1,200 @@
 
+// Code your testbench here
+// or browse Examples
+//interface
+
+interface intf;
+  logic a1;
+  logic b1;
+  logic diff;
+  logic brrow;
+endinterface
+
+//transcation
+
+class transcation;
+  rand bit a1,b1;
+  bit diff,brrow;
+endclass
+
+//generator
+
+class generator;
+  mailbox gentodiv;
+  rand transcation trans;
+  
+  function new(mailbox gentodiv);
+    this.gentodiv=gentodiv;
+    
+  endfunction
+  
+  task run;
+    repeat(5)
+      begin
+        trans=new;
+        void'(trans.randomize());
+        gentodiv.put(trans);
+        
+        $display("the generator values");
+        $display("------------------------");
+        $display("a1=%b,b1=%b",trans.a1,trans.b1);
+      end
+  endtask
+endclass
+
+
+//driver
+
+class driver;
+  transcation trans;
+  mailbox gentodiv;
+  virtual intf vif;
+  
+  function new(virtual intf vif,mailbox gentodiv);
+    this.vif=vif;
+    this.gentodiv=gentodiv;
+  endfunction
+  
+  task run;
+    repeat(5)
+    begin
+      trans=new;
+      gentodiv.get(trans);
+      vif.a1=trans.a1;
+      vif.b1=trans.b1;
+      #2;
+      trans.diff=vif.diff;
+      trans.brrow=vif.brrow;
+      $display("the driver values are");
+      $display("------------------------");
+      $display("a1=%b,b1=%b,diff=%d,brrow=%d",trans.a1,trans.b1,trans.diff,trans.brrow);
+      
+    end
+  endtask
+endclass
+
+
+
+//monitor
+
+class monitor;
+  mailbox motosb;
+  transcation trans;
+  virtual intf vif;
+  
+  function new(virtual intf vif,mailbox motosb);
+    
+    this.vif=vif;
+    this.motosb=motosb;
+  endfunction
+  
+  task run;
+    repeat(5)
+    begin
+      trans=new;
+      motosb.put(trans);
+      trans.a1=vif.a1;
+      trans.b1=vif.b1;
+      #1;
+      trans.diff=vif.diff;
+      trans.brrow=vif.brrow;
+      
+      $display("the monitor values are");
+      $display("------------------------");
+      $display("a1=%b,b1=%b,diff=%d,brrow=%d",trans.a1,trans.b1,trans.diff,trans.brrow);
+    end
+  endtask
+endclass
+
+//scoreboard
+
+class scoreboard;
+  mailbox motosb;
+  transcation trans;
+  
+  function new(mailbox motosb);
+    this.motosb=motosb;
+  endfunction
+  
+  task run;
+    repeat(5)
+    begin
+    trans=new;
+    motosb.get(trans);
+    end
+  endtask
+endclass
+
+//enviroment
+class environment;
+  generator gen;
+  driver div;
+  monitor moni;
+  scoreboard sb;
+  mailbox gentodiv;
+  mailbox motosb;
+  virtual intf vif;
+  
+  function new(virtual intf vif);
+    this.vif=vif;
+    gentodiv=new();
+    motosb=new();
+    gen=new(gentodiv);
+    div=new(vif,gentodiv);
+    moni=new(vif,gentodiv);
+    sb=new(motosb);
+  endfunction
+  
+  task run;
+    repeat(5)
+      fork
+        gen.run;
+        div.run;
+        moni.run;
+        sb.run;
+      join
+  endtask
+endclass
+
+
+//test
+
+program test(intf i_intf);
+environment env;
+initial begin
+env= new(i_intf);
+env.run();
+end
+endprogram
+
+
+//toptest
+module top_test_module();
+intf i_intf();
+test t1(i_intf);
+  hs dut(.a1(i_intf.a1),.b1(i_intf.b1),.diff(i_intf.diff),.brrow(i_intf.brrow));
+                                                          
+initial begin
+$display("completed");
+end
+endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+DUT
+
+
+module hs( input logic a1,b1,
+          output logic diff,brrow);
+  assign diff= a1^b1;
+  assign brrow=(~a1)&b1;
+endmodule
